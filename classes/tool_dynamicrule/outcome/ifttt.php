@@ -122,15 +122,45 @@ class ifttt extends \tool_dynamicrule\outcome_base {
     }
 
     /**
+     * Returns the values for the user placeholders
+     *
+     * @param \stdClass $user
+     * @return array
+     */
+    private function get_user_data_for_placeholders(\stdClass $user) {
+        return [
+            'userfirstname' => $user->firstname,
+            'userfullname' => fullname($user),
+        ];
+    }
+
+    /**
+     * Replace placeholders.
+     *
+     * @param string $text
+     * @param array $values
+     * @return null|string|string[]
+     */
+    private function replace_placeholders(string $text, array $values) {
+        foreach ($values as $key => $value) {
+            $text = preg_replace('/' . preg_quote('{{' . $key . '}}', '/') . '/',
+                $value ?? '', $text);
+        }
+        return $text;
+    }
+
+    /**
      * Apply this outcome to a given user.
      *
      * @param \stdClass $user The user object to apply the outcome to
      */
     public function apply_to_user(\stdClass $user): void {
+        $placeholdersdata = $this->get_user_data_for_placeholders($user);
+
         $values = [
-            'value1' => $this->get_configdata()['eventvalue1'],
-            'value2' => $this->get_configdata()['eventvalue2'],
-            'value3' => $this->get_configdata()['eventvalue3'],
+            'value1' => $this->replace_placeholders($this->get_configdata()['eventvalue1'], $placeholdersdata),
+            'value2' => $this->replace_placeholders($this->get_configdata()['eventvalue2'], $placeholdersdata),
+            'value3' => $this->replace_placeholders($this->get_configdata()['eventvalue3'], $placeholdersdata),
         ];
 
         // Trigger event.
